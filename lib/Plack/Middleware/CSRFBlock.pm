@@ -9,13 +9,14 @@ use Plack::TempBuffer;
 use Plack::Util;
 use Digest::SHA1;
 use Plack::Util::Accessor qw(
-    parameter_name token_length session_key blocked onetime
+    parameter_name token_length session_key blocked onetime exclude_paths
     _param_re _token_generator
 );
 
 sub prepare_app {
     my $self = shift;
 
+    $self->exclude_paths([]) unless defined $self->exclude_paths;
     $self->parameter_name('SEC') unless defined $self->parameter_name;
     $self->token_length(16) unless defined $self->token_length;
     $self->session_key('csrfblock.token') unless defined $self->session_key;
@@ -56,6 +57,7 @@ sub call {
         and exists $env->{CONTENT_TYPE}
         and ( $env->{CONTENT_TYPE} =~ m{^(application/x-www-form-urlencoded)}i
             or $env->{CONTENT_TYPE} =~ m{^(multipart/form-data)}i )
+        and !$self->exclude( $env )
         )
     {
         my $ct = $1;
@@ -188,6 +190,16 @@ sub token_not_found {
             [ $body ]
         ];
     }
+}
+
+sub exclude {
+    my ( $self, $env ) = @_;
+    foreach my $regex ( @{ $self->exclude_paths } ) {
+        if ( $regex =~ $env->{PATH_INFO} ) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 1;
