@@ -195,7 +195,7 @@ sub token_not_found {
 sub exclude {
     my ( $self, $env ) = @_;
     foreach my $regex ( @{ $self->exclude_paths } ) {
-        if ( $regex =~ $env->{PATH_INFO} ) {
+        if ( $env->{PATH_INFO} =~ $regex ) {
             return 1;
         }
     }
